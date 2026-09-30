@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - ByteBattles</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <div class="card" id="profile">
+      <p class="muted">Loading profile...</p>
+    </div>
+
+    <div class="grid-2" id="lists" hidden>
+      <div class="card">
+        <h2>Solved problems</h2>
+        <ul id="solved"></ul>
+      </div>
+      <div class="card">
+        <h2>Recent submissions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Problem</th><th>Verdict</th></tr></thead>
+            <tbody id="recent"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- only shown on your own profile -->
+    <div class="card" id="settings" hidden>
+      <h2>Account settings</h2>
+      <p class="muted small">Fill in only what you want to change.</p>
+      <div id="settings-message"></div>
+      <form id="settings-form">
+        <div class="grid-2">
+          <div>
+            <label for="new-username">New username</label>
+            <input type="text" id="new-username" pattern="[A-Za-z0-9_]{3,20}">
+          </div>
+          <div>
+            <label for="new-email">New email</label>
+            <input type="email" id="new-email">
+          </div>
+          <div>
+            <label for="new-password">New password</label>
+            <input type="password" id="new-password" autocomplete="new-password" minlength="8">
+          </div>
+          <div>
+            <label for="new-conf-password">Confirm new password</label>
+            <input type="password" id="new-conf-password" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/pages/profile.js"></script>
+</body>
+</html>

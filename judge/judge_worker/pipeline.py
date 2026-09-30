@@ -36,7 +36,7 @@ class JudgePipeline:
 
     def _get_testcases(self, db, problem_id: str):
         testcases = db.query(TestCase).filter(TestCase.problem_id == problem_id).order_by(TestCase.id).all()
-        if testcases is None:
+        if not testcases:
             raise ValueError(f"Testcases for problem {problem_id} not found")
         return testcases
     
@@ -54,6 +54,17 @@ class JudgePipeline:
             if submission is None:
                 return
             
+            # Keep the problem's accepted count in step with verdict transitions,
+            # so re-judging a submission never double counts it
+            was_accepted = submission.verdict == Verdict.ACCEPTED
+            is_accepted = result.verdict == Verdict.ACCEPTED
+            if was_accepted != is_accepted:
+                delta = 1 if is_accepted else -1
+                db.query(Problem).filter(Problem.id == submission.problem_id).update(
+                    {Problem.accepted_submissions: Problem.accepted_submissions + delta},
+                    synchronize_session=False
+                )
+
             submission.verdict = result.verdict
             submission.output = result.output
             submission.incorrect_testcase_key = result.incorrect_testcase_key

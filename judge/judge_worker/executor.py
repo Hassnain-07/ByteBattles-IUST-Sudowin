@@ -1,4 +1,5 @@
 import io
+import socket
 import tarfile
 import docker
 from docker.utils.socket import frames_iter
@@ -8,6 +9,24 @@ from config import (
 )
 from shared.models import Language, FILENAME, Verdict
 from .types import CompileResult, RunResult
+
+def parse_time_stats(stderr_output: str, time_limit_sec: int, memory_limit_kb: int) -> tuple[int, int]:
+    """Parse the '%e %M' line GNU time writes last, returning (runtime_ms, memory_kb) capped at the limits."""
+    for line in reversed(stderr_output.strip().splitlines()):
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        try:
+            elapsed_sec, memory_kb = float(parts[0]), int(parts[1])
+        except ValueError:
+            continue
+        runtime_ms = min(int(elapsed_sec * 1000), time_limit_sec * 1000)
+        return runtime_ms, min(memory_kb, memory_limit_kb)
+
+    raise RuntimeError(f"Could not parse time stats from: {stderr_output[-200:]!r}")
+
+def normalize_output(s: str) -> str:
+    return "\n".join(s.strip().split())
 
 class JudgeExecutor:
     def __init__(self):
@@ -95,8 +114,9 @@ class JudgeExecutor:
             tty=False,
         )
 
-        # send stdin
+        # send stdin, then close our write side so the program sees EOF
         sock._sock.sendall(input_data.encode())
+        sock._sock.shutdown(socket.SHUT_WR)
 
         stdout_chunks = []
         stderr_chunks = []
@@ -115,10 +135,7 @@ class JudgeExecutor:
         stdout_output = b"".join(stdout_chunks).decode("utf-8", errors="replace")
         stderr_output = b"".join(stderr_chunks).decode("utf-8", errors="replace")
 
-        stats = stderr_output.split("\n")[-2].split()
-
-        time_elapsed = min(int(float(stats[0])), time_limit_sec * 1000)
-        memory_kb_used = min(int(stats[1]), memory_limit_kb)
+        time_elapsed, memory_kb_used = parse_time_stats(stderr_output, time_limit_sec, memory_limit_kb)
 
         if memory_kb_used == memory_limit_kb:
             verdict = Verdict.MEMORY_LIMIT_EXCEEDED
@@ -128,9 +145,7 @@ class JudgeExecutor:
             verdict = Verdict.RUNTIME_ERROR
         else:
             # compare output
-            def norm(s: str) -> str:
-                return "\n".join(s.strip().split())            
-            verdict = Verdict.ACCEPTED if norm(stdout_output) == norm(expected_output) else Verdict.WRONG_ANSWER
+            verdict = Verdict.ACCEPTED if normalize_output(stdout_output) == normalize_output(expected_output) else Verdict.WRONG_ANSWER
 
         return RunResult(
             ok=(verdict == Verdict.ACCEPTED),

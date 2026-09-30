@@ -48,7 +48,7 @@ def create_access_token(payload: TokenPayload):
     return create_token(payload, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), "access")
 
 def create_refresh_token(payload: TokenPayload):
-    return create_token(payload, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), "refresh")
+    return create_token(payload, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS), "refresh")
 
 def verify_token(token: str, token_type: str):
     try:
@@ -93,7 +93,7 @@ def get_optional_current_user(access_token: str | None = Depends(optional_oauth2
         token_data = verify_token(access_token, "access")
         current_user = db.query(User).filter(User.id == token_data.sub).first()
         return current_user
-    except:
+    except HTTPException:
         return None
 
 def get_optional_current_admin(current_user: User | None = Depends(get_optional_current_user)):

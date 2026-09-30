@@ -1,6 +1,6 @@
 from ..core import Base
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, false
 from sqlalchemy.orm import relationship
 
 from .enums import UserType
@@ -12,7 +12,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    is_verified = Column(Boolean, server_default="FALSE")
+    is_verified = Column(Boolean, server_default=false())
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     user_type = Column(

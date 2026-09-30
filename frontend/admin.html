@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - ByteBattles</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <div class="message info">
+      Everything on this page needs an <strong>admin</strong> account. If you get "Not enough permissions",
+      ask an admin to promote you (or see the Fresher Guide for making the first admin).
+    </div>
+
+    <!-- ============ manage problems ============ -->
+    <div class="card">
+      <div class="row">
+        <h2>Problems</h2>
+        <span class="spacer"></span>
+        <button id="new-problem" class="small">+ New problem</button>
+      </div>
+      <div id="manage-message"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Title</th><th>Visible</th><th>Accepted</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="manage-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ create / edit problem ============ -->
+    <div class="card" id="problem-card" hidden>
+      <h2 id="problem-form-title">New problem</h2>
+      <div id="problem-message"></div>
+
+      <form id="problem-form">
+        <div class="grid-2">
+          <div>
+            <label for="p-id">Problem ID</label>
+            <input type="text" id="p-id" required maxlength="6" placeholder="e.g. SUM1">
+            <div class="hint">Up to 6 characters. Can't be changed later.</div>
+          </div>
+          <div>
+            <label for="p-title">Title</label>
+            <input type="text" id="p-title" required>
+          </div>
+          <div>
+            <label for="p-difficulty">Difficulty</label>
+            <select id="p-difficulty">
+              <option value="EASY">Easy</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HARD">Hard</option>
+            </select>
+          </div>
+          <div>
+            <label for="p-tags">Tags</label>
+            <input type="text" id="p-tags" required placeholder="math, dp">
+            <div class="hint">Comma-separated tag <em>slugs</em>. Each tag must exist - create it below first.</div>
+          </div>
+          <div>
+            <label for="p-time">Time limit (seconds)</label>
+            <input type="number" id="p-time" required min="1" value="1">
+          </div>
+          <div>
+            <label for="p-memory">Memory limit (MB)</label>
+            <input type="number" id="p-memory" required min="1" value="256">
+          </div>
+        </div>
+
+        <label for="p-description">Description</label>
+        <textarea id="p-description" required></textarea>
+
+        <div class="grid-2">
+          <div>
+            <label for="p-input">Input format</label>
+            <textarea id="p-input" required></textarea>
+          </div>
+          <div>
+            <label for="p-output">Output format</label>
+            <textarea id="p-output" required></textarea>
+          </div>
+        </div>
+
+        <label for="p-constraints">Constraints</label>
+        <textarea id="p-constraints" placeholder="1 <= a, b <= 1000"></textarea>
+        <div class="hint">One constraint per line.</div>
+
+        <label>Examples (shown to users)</label>
+        <div id="samples"></div>
+        <button type="button" id="add-sample" class="secondary small">+ Add example</button>
+
+        <label for="p-explanation">Explanation (optional)</label>
+        <textarea id="p-explanation"></textarea>
+
+        <div class="grid-2">
+          <div>
+            <label for="p-source">Source (optional)</label>
+            <input type="text" id="p-source">
+          </div>
+          <div>
+            <label class="checkbox"><input type="checkbox" id="p-visibility"> Visible to users</label>
+            <div class="hint">Hidden problems are only visible to admins, and nobody can submit to them.</div>
+          </div>
+        </div>
+
+        <label for="p-editorial">Editorial (optional)</label>
+        <textarea id="p-editorial"></textarea>
+
+        <div id="zip-field">
+          <label for="p-zip">Testcases (.zip)</label>
+          <input type="file" id="p-zip" accept=".zip">
+          <div class="hint">
+            The folder inside the zip must have the <strong>same name as the zip file</strong>.
+            For <code>tests.zip</code>: <code>tests/inputs/1.txt</code> + <code>tests/outputs/1.txt</code>,
+            <code>tests/inputs/2.txt</code> + <code>tests/outputs/2.txt</code>, ...
+            (matching file names in both folders).
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="problem-submit">Create problem</button>
+          <button type="button" id="problem-cancel" class="secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="grid-2">
+      <!-- ============ tags ============ -->
+      <div class="card">
+        <h2>Create a tag</h2>
+        <div id="tag-message"></div>
+        <form id="tag-form">
+          <label for="tag-name">Name</label>
+          <input type="text" id="tag-name" required placeholder="Dynamic Programming">
+          <label for="tag-slug">Slug</label>
+          <input type="text" id="tag-slug" required placeholder="dynamic-programming" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="50">
+          <div class="hint">Lowercase letters, numbers and hyphens. This is what you type in a problem's Tags field.</div>
+          <div class="form-actions"><button type="submit">Create tag</button></div>
+        </form>
+      </div>
+
+      <!-- ============ roles ============ -->
+      <div class="card">
+        <h2>User roles</h2>
+        <div id="role-message"></div>
+        <form id="role-form">
+          <label for="role-username">Username</label>
+          <input type="text" id="role-username" required>
+          <label for="role-type">Role</label>
+          <select id="role-type">
+            <option value="ADMIN">Admin</option>
+            <option value="USER">User</option>
+          </select>
+          <div class="hint">You can't change your own role.</div>
+          <div class="form-actions"><button type="submit">Update role</button></div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/pages/admin.js"></script>
+</body>
+</html>

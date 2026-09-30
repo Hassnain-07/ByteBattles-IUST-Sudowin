@@ -2,15 +2,18 @@ import time
 import docker
 import redis
 
-from config import REDIS_DB, REDIS_JOB_LIST, REDIS_HOST, REDIS_JOB_LIST, REDIS_PORT, SHUTDOWN_KEY, WORKER_PREFIX
+from config import REDIS_DB, REDIS_JOB_LIST, REDIS_HOST, REDIS_PORT, SHUTDOWN_KEY, WORKER_PREFIX, MAX_JUDGE_ATTEMPTS
 from .database import Database
 from .executor import JudgeExecutor
 from .pipeline import JudgePipeline
 from .redis_queue import RedisQueues
 from .storage_adapter import StorageAdapter
 from .types import SubmissionResult
+from shared.models import Verdict
 
 from ..utils import setup_logger
+
+ATTEMPTS_KEY = "judge:attempts"
 
 class JudgeWorker:
     def __init__(self, identifier):
@@ -34,13 +37,24 @@ class JudgeWorker:
     def _set_submission(self, submission_id):
         self.redis.set(self.current_submission_key, submission_id)
     
-    def _delete_submission(self, submission_id):
+    def _delete_submission(self):
         self.redis.delete(self.current_submission_key)
+
+    def _mark_failed(self, submission_id: int, reason: str):
+        self.redis.hdel(ATTEMPTS_KEY, submission_id)
+        try:
+            self.pipeline._update_submission_result(
+                submission_id,
+                SubmissionResult(submission_id=submission_id, verdict=Verdict.SKIPPED, output=reason)
+            )
+        except Exception as e:
+            self.log.error(f"Could not mark submission ID: {submission_id} as failed: {e}")
 
     def _consume_from_list(self) -> None:
         while self.redis.get(SHUTDOWN_KEY) != "1" and self.redis.get(self.local_shutdown_key) != "1":
 
             self.redis.set(self.local_heartbeat_key, time.time())
+            submission_id = None
             
             try:
                 item = self.redis.brpop(REDIS_JOB_LIST, timeout=1)
@@ -52,17 +66,38 @@ class JudgeWorker:
                 self.log.info(f"Processing submission with ID: {submission_id}")
                 self._set_submission(submission_id)
                 result = self.pipeline.process_submission(submission_id)
-                self._delete_submission(submission_id)
+                self.redis.hdel(ATTEMPTS_KEY, submission_id)
                 self.log.info(f"Processed submission with ID: {result.submission_id} - Verdict: {result.verdict.value}")
             except KeyboardInterrupt:
                 self.log.info("Shutting down...")
                 return
             except ValueError as e:
+                # Bad data (missing submission/problem/testcases) - retrying won't help
                 self.log.error(e)
-            except Exception as e:
-                self.log.error(f"Processing of submission ID : {submission_id} failed with error: {e} - Attempting Retry")
+                if submission_id is not None:
+                    self._mark_failed(submission_id, f"Judging failed: {e}")
+            except TimeoutError as e:
+                # Warm pool is drained under load - not the submission's fault, so don't count an attempt
+                self.log.warning(f"{e} - Requeueing submission ID : {submission_id}")
                 self.redis.lpush(REDIS_JOB_LIST, submission_id)
                 time.sleep(1)
+            except Exception as e:
+                if submission_id is None:
+                    self.log.error(f"Failed to fetch job: {e}")
+                    time.sleep(1)
+                    continue
+
+                attempts = self.redis.hincrby(ATTEMPTS_KEY, submission_id, 1)
+                if attempts >= MAX_JUDGE_ATTEMPTS:
+                    self.log.error(f"Processing of submission ID : {submission_id} failed {attempts} times with error: {e} - Giving up")
+                    self._mark_failed(submission_id, "Judging failed due to an internal error")
+                else:
+                    self.log.error(f"Processing of submission ID : {submission_id} failed with error: {e} - Attempting Retry ({attempts}/{MAX_JUDGE_ATTEMPTS})")
+                    self.redis.lpush(REDIS_JOB_LIST, submission_id)
+                    time.sleep(1)
+            finally:
+                if submission_id is not None:
+                    self._delete_submission()
 
     def run(self) -> None:
         self.log.info("judge worker starting")

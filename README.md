@@ -4,7 +4,7 @@ ByteBattles is a competitive programming platform built around a FastAPI backend
 
 The system is designed to be practical, fast, and scalable on a single machine while remaining ready for horizontal expansion later.
 
-### Checkout judge/Judge_Architecture.pdf
+### Checkout docs/Judge_Architecture.pdf
 
 ## Highlights
 
@@ -177,13 +177,18 @@ ByteBattles/
 - `PATCH /users/me`
 - `DELETE /users/me`
 - `GET /users/{username}`
+- `GET /users/{username}/submissions`
+- `GET /users/{username}/solved_problems`
+- `PATCH /users/{username}/role` (admin)
 
 ### Problems
 - `GET /problems/`
-- `POST /problems/`
+- `POST /problems/` (admin)
 - `GET /problems/{problem_id}`
-- `POST /problems/tag`
-- `DELETE /problems/`
+- `PATCH /problems/{problem_id}` (admin)
+- `DELETE /problems/{problem_id}` (admin)
+- `POST /problems/{problem_id}/rejudge` (admin)
+- `POST /problems/tag` (admin)
 
 ### Submissions
 - `POST /submissions/`
@@ -201,6 +206,7 @@ ByteBattles supports the following verdicts:
 - `CE` — Compilation Error
 - `RE` — Runtime Error
 - `PD` — Pending
+- `SKP` — Skipped (the judge gave up after `MAX_JUDGE_ATTEMPTS` internal failures, or the submission's data was invalid)
 
 ## How judge components work
 
@@ -279,6 +285,14 @@ uvicorn api.app.main:app
 ```bash
 python -m judge.run
 ```
+
+### Run the tests
+```bash
+uv sync --group api --group judge --group dev
+uv run pytest
+```
+
+The tests use SQLite and in-memory fakes for MinIO and Redis, so they don't need Docker or any running services.
 
 ## Configuration
 

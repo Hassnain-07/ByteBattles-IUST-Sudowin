@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, Form,
 from sqlalchemy.orm import Session
 from typing import List, Dict, BinaryIO
 
-from ..schemas.problems import ProblemResponse, ProblemDetailResponse, ProblemArrayDataValidator, TagCreate, ProblemCreateResponse
+from ..schemas.problems import ProblemResponse, ProblemDetailResponse, ProblemArrayDataValidator, TagCreate, TagResponse, ProblemCreateResponse, ProblemUpdate, RejudgeResponse
 from ..utils import oauth2
+from ..utils.redis_utils import enqueue_job
 from ..database import get_db
 
 from shared.core import get_storage_testcases, get_storage_submission_code
@@ -16,7 +17,7 @@ from shared.models import (
     Problem, Category, TestCase, # problems
     Submission, # submissions
     User, # users
-    Difficulty # enums
+    Difficulty, Verdict # enums
 )
 
 router = APIRouter(
@@ -24,13 +25,22 @@ router = APIRouter(
     tags=["Problems"]
 )
 
-# NOTE: admin tag/category creation (POST /problems/tag) used to live here.
-# It's been pulled out — see PROBLEM_STATEMENT.md. `TagCreate` schema and the
-# `Category` model are still imported/available above for you to use.
+@router.post('/tag', status_code=status.HTTP_201_CREATED, response_model=TagResponse)
+def create_tag(tag: TagCreate, db: Session = Depends(get_db), current_user: User = Depends(oauth2.get_current_admin)):
+    if db.query(Category).filter(Category.slug == tag.slug).first():
+        raise HTTPException(detail="Tag with this slug already exists", status_code=status.HTTP_409_CONFLICT)
+
+    category = Category(name=tag.name, slug=tag.slug)
+
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+
+    return category
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[ProblemResponse])
 def get_problems(page: int = Query(default=1, ge=1), limit: int = Query(default=20, ge=5, le=100), db: Session = Depends(get_db), current_user: User | None = Depends(oauth2.get_optional_current_admin)):
-    offset = page * limit
+    offset = (page - 1) * limit
     if current_user:
         problems = db.query(Problem).order_by(Problem.id.asc()).offset(offset).limit(limit).all()
     else:
@@ -237,7 +247,36 @@ async def create_problem(
         "testcases": len(input_files)
     }
 
-@router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
+@router.patch('/{problem_id}', status_code=status.HTTP_200_OK, response_model=ProblemDetailResponse)
+def update_problem(problem_id: str, updates: ProblemUpdate, db: Session = Depends(get_db), current_user: User = Depends(oauth2.get_current_admin)):
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(detail="Problem with given ID not found", status_code=status.HTTP_404_NOT_FOUND)
+
+    data = updates.model_dump(exclude_unset=True)
+
+    # Required columns can't be cleared, only changed
+    nullable_fields = {"explanation", "source", "editorial"}
+    for field, value in data.items():
+        if value is None and field not in nullable_fields:
+            raise HTTPException(detail=f"{field} cannot be null", status_code=status.HTTP_400_BAD_REQUEST)
+
+    if "tags" in data:
+        tags = data.pop("tags")
+        categories = db.query(Category).filter(Category.slug.in_(tags)).all()
+        if len(categories) != len(set(tags)):
+            raise HTTPException(detail="One or more tags are invalid", status_code=status.HTTP_400_BAD_REQUEST)
+        problem.tags = categories
+
+    for field, value in data.items():
+        setattr(problem, field, value)
+
+    db.commit()
+    db.refresh(problem)
+
+    return get_problem_by_id(problem.id, db, current_user)
+
+@router.delete('/{problem_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_problem(problem_id: str, current_user: User = Depends(oauth2.get_current_admin), db: Session = Depends(get_db)):
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -251,3 +290,29 @@ def delete_problem(problem_id: str, current_user: User = Depends(oauth2.get_curr
     
     db.delete(problem)
     db.commit()
+
+@router.post('/{problem_id}/rejudge', status_code=status.HTTP_202_ACCEPTED, response_model=RejudgeResponse)
+def rejudge_problem(problem_id: str, current_user: User = Depends(oauth2.get_current_admin), db: Session = Depends(get_db)):
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(detail="Problem with given ID not found", status_code=status.HTTP_404_NOT_FOUND)
+
+    submissions = db.query(Submission).filter(Submission.problem_id == problem.id).order_by(Submission.id.asc()).all()
+    for submission in submissions:
+        submission.verdict = Verdict.PENDING
+        submission.output = None
+        submission.incorrect_testcase_key = None
+        submission.walltime_ms = None
+        submission.memory_kb = None
+
+    # The judge re-counts accepted submissions as verdicts come back
+    problem.accepted_submissions = 0
+    db.commit()
+
+    for submission in submissions:
+        enqueue_job(submission.id)
+
+    return {
+        "problem_id": problem.id,
+        "requeued": len(submissions)
+    }

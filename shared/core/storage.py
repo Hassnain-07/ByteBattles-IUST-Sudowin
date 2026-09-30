@@ -28,7 +28,7 @@ class StorageServiceTestcases:
         unique_id = uuid.uuid4().hex
         return f"problems/{problem_id}/{unique_id}-{filename}"
 
-    async def upload_file(self, problem_id: str):
+    async def upload_file(self, problem_id: str, file):
 
         object_key = self._generate_object_key(problem_id, file.filename)
         contents = await file.read()
@@ -83,27 +83,26 @@ class StorageServiceTestcases:
 
         prefix = f"problems/{problem_id}/"
 
-        response = self.client.list_objects_v2(
-            Bucket=self.bucket_name,
-            Prefix=prefix
-        )
+        paginator = self.client.get_paginator("list_objects_v2")
 
-        contents = response.get("Contents", [])
+        # list_objects_v2 and delete_objects both cap at 1000 keys per call
+        for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
+            contents = page.get("Contents", [])
 
-        if not contents:
-            return
+            if not contents:
+                continue
 
-        objects = [
-            {"Key": obj["Key"]}
-            for obj in contents
-        ]
+            objects = [
+                {"Key": obj["Key"]}
+                for obj in contents
+            ]
 
-        self.client.delete_objects(
-            Bucket=self.bucket_name,
-            Delete={
-                "Objects": objects
-            }
-        )
+            self.client.delete_objects(
+                Bucket=self.bucket_name,
+                Delete={
+                    "Objects": objects
+                }
+            )
 
 class StorageServiceSubmissionCode:
 

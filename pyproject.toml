@@ -22,6 +22,10 @@ api = [
     "python-multipart>=0.0.32",
     "uvicorn>=0.51.0",
 ]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
 judge = [
     "docker>=7.2.0",
     "netifaces>=0.11.0",

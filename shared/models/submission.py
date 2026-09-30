@@ -58,8 +58,10 @@ class Submission(Base):
     
     @property
     def incorrect_testcase(self):
-        return get_storage_testcases().get_file(self.incorrect_testcase_key) if self.incorrect_testcase_key and get_storage_submission_code().file_exists(self.incorrect_testcase_key) else None
+        if not self.incorrect_testcase_key or not get_storage_testcases().file_exists(self.incorrect_testcase_key):
+            return None
+        return get_storage_testcases().get_file(self.incorrect_testcase_key).decode("utf-8", errors="replace")
     
     @property
     def code(self):
-        return get_storage_submission_code().get_file(self.code_object_key)
+        return get_storage_submission_code().get_file(self.code_object_key).decode("utf-8", errors="replace")

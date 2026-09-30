@@ -41,6 +41,7 @@ def create_submission(details: SubmissionCreate, current_user: User = Depends(oa
     )
 
     db.add(submission)
+    problem.total_submissions = Problem.total_submissions + 1
     db.commit()
     db.refresh(submission)
 

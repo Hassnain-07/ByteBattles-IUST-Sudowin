@@ -9,13 +9,14 @@ S - `POST /auth/logout` : loggedin users can logout (NOT NEEDED RIGHT NOW)      
 
 ## Users (Profile)
 
- - `GET /users/<usersname>` : get profile of any users
- - `GET /users/<usersname>/submissions` : get all submissions of any users
- - `GET /users/<usersname>/solved_problems` : get all solved problems of any users
+D - `GET /users/<usersname>` : get profile of any users
+D - `GET /users/<usersname>/submissions` : get all submissions of any users
+D - `GET /users/<usersname>/solved_problems` : get all solved problems of any users
 
 D - `GET /users/me` : get profile of logged in users                                                             (Loggedin: users)
 D - `PATCH /users/me` : update logged in users's details                                                         (Loggedin: users)
 D - `DELETE /users/me` : delete logged in users                                                                  (Loggedin: users)
+D - `PATCH /users/<usersname>/role` : promote/demote a user (can't change own role)                              (Loggedin: Admin)
 
 ## Problems
 
@@ -25,9 +26,9 @@ D - `GET /problems/<id>` : get details for the problem with given id            
 D - `POST /problems/tag` : create a new tag                                                                      (Loggedin: Admin)
 
 D - `POST /problems` : create a new problem                                                                      (Loggedin: Admin)
- - `PATCH /problems/<id>` : edit details of problem with given id                                               (Loggedin: Admin)
- - `DELETE /problems/<id>` : delete problem with given id                                                       (Loggedin: Admin)
- - `POST /problems/<id>/rejudge` : re run all the submissions of the problem with given id                      (Loggedin: Admin)
+D - `PATCH /problems/<id>` : edit details of problem with given id                                               (Loggedin: Admin)
+D - `DELETE /problems/<id>` : delete problem with given id                                                       (Loggedin: Admin)
+D - `POST /problems/<id>/rejudge` : re run all the submissions of the problem with given id                      (Loggedin: Admin)
 
 ## Submissions
 

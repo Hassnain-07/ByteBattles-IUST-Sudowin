@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Problem - ByteBattles</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <div id="message"></div>
+
+    <!-- Problem statement is filled in by js/pages/problem.js -->
+    <div class="card" id="statement">
+      <p class="muted">Loading problem...</p>
+    </div>
+
+    <div class="card" id="submit-card" hidden>
+      <h2>Submit a solution</h2>
+      <form id="submit-form">
+        <div class="row">
+          <label for="language" style="margin:0">Language</label>
+          <select id="language" style="width:auto">
+            <option value="PY">Python 3</option>
+            <option value="CPP">C++ (C++17)</option>
+            <option value="C">C</option>
+          </select>
+          <span class="spacer"></span>
+          <button type="button" id="reset-code" class="secondary small">Reset to template</button>
+        </div>
+
+        <label for="code">Code</label>
+        <textarea id="code" class="code" spellcheck="false" required></textarea>
+        <div class="hint">Read from standard input, write to standard output. The Tab key inserts spaces.</div>
+
+        <div class="form-actions">
+          <button type="submit" id="submit">Submit</button>
+          <span id="login-hint" class="muted small" hidden>You need to <a id="login-link" href="login.html">log in</a> to submit.</span>
+        </div>
+      </form>
+
+      <div id="result"></div>
+    </div>
+
+    <div class="card" id="history-card" hidden>
+      <h2>Your submissions for this problem</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>When</th><th>Verdict</th><th>Time</th><th>Memory</th></tr>
+          </thead>
+          <tbody id="history-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/pages/problem.js"></script>
+</body>
+</html>

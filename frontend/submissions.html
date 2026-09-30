@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Submissions - ByteBattles</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <div class="card">
+      <div class="row">
+        <h1>My Submissions</h1>
+        <span class="spacer"></span>
+        <label for="problem-filter" class="small muted" style="margin:0">Problem ID</label>
+        <input type="text" id="problem-filter" placeholder="all" style="width:120px">
+        <button id="filter" class="secondary small">Filter</button>
+        <button id="refresh" class="secondary small">Refresh</button>
+      </div>
+
+      <div id="message"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>When</th><th>Problem</th><th>Verdict</th><th>Time</th><th>Memory</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prev" class="secondary small">&larr; Prev</button>
+        <span id="page-label" class="muted small"></span>
+        <button id="next" class="secondary small">Next &rarr;</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/pages/submissions.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Problems - ByteBattles</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <div class="card">
+      <div class="row">
+        <h1>Problems</h1>
+        <span class="spacer"></span>
+        <label class="small muted" for="limit" style="margin:0">Per page</label>
+        <select id="limit" style="width:auto">
+          <option>10</option>
+          <option selected>20</option>
+          <option>50</option>
+        </select>
+      </div>
+      <p class="muted">Pick a problem, write a solution in C, C++ or Python, and let the judge grade it.</p>
+
+      <div id="message"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Difficulty</th>
+              <th>Tags</th>
+              <th>Solved by</th>
+            </tr>
+          </thead>
+          <tbody id="problem-rows"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prev" class="secondary small">&larr; Prev</button>
+        <span id="page-label" class="muted small"></span>
+        <button id="next" class="secondary small">Next &rarr;</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>ByteBattles &middot; <a href="http://localhost:8000/docs">API docs</a></footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/pages/problems.js"></script>
+</body>
+</html>

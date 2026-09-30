@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
+
+from shared.models import UserType
 from datetime import datetime
 
 import re
@@ -74,3 +76,14 @@ class TokenPayload(BaseModel):
 
 class RefreshAccessTokenRequest(BaseModel):
     refresh_token: str
+
+class UserRoleUpdate(BaseModel):
+    user_type: UserType
+
+class UserRoleResponse(BaseModel):
+    username: str
+    user_type: UserType
+
+class SolvedProblemResponse(BaseModel):
+    id: str
+    title: str

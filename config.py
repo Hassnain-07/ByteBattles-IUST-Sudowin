@@ -19,7 +19,8 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWD = os.getenv("DB_PASSWD")
 DB_DATABASE = os.getenv("DB_DATABASE")
 
-DB_URL=f"postgresql+psycopg2://{DB_USER}:{DB_PASSWD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
+# DB_URL can be set directly (e.g. sqlite for tests); otherwise it is built from the parts above
+DB_URL = os.getenv("DB_URL") or f"postgresql+psycopg2://{DB_USER}:{DB_PASSWD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -41,6 +42,7 @@ MINIMUM_JUDGE_WORKER = int(os.getenv("MINIMUM_JUDGE_WORKER"))
 MAXIMUM_JUDGE_WORKER = int(os.getenv("MAXIMUM_JUDGE_WORKER"))
 
 JUDGE_WORKER_TIMEOUT = int(os.getenv("JUDGE_WORKER_TIMEOUT"))
+MAX_JUDGE_ATTEMPTS = int(os.getenv("MAX_JUDGE_ATTEMPTS", "3"))
 ACQUIRE_TIMEOUT_SECONDS = int(os.getenv("ACQUIRE_TIMEOUT_SECONDS"))
 
 MAX_MEMCAP_GB = int(os.getenv("MAX_MEMCAP_GB"))

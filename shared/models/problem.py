@@ -1,6 +1,6 @@
 from ..core import Base
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, ForeignKey, Enum as SQLEnum
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, false
 from sqlalchemy.orm import relationship
 
 from .enums import Difficulty
@@ -52,7 +52,7 @@ class Problem(Base):
         cascade="all, delete-orphan"
     )
 
-    visibility = Column(Boolean, server_default="FALSE")
+    visibility = Column(Boolean, server_default=false())
 
     source = Column(String, nullable=True)
 
